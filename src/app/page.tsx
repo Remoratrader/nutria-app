@@ -102,12 +102,15 @@ const recipesData: Recipe[] = [
 const ProfileForm: React.FC<{ userProfile: UserProfile; setUserProfile: React.Dispatch<React.SetStateAction<UserProfile>>; onProfileComplete: () => void; }> = ({ userProfile, setUserProfile, onProfileComplete }) => {
   // CORREÇÃO: Função de handleChange agora é 100% type-safe
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
+    const { name } = e.target;
 
+    // Primeiro, verificamos se o elemento é um input e do tipo checkbox
     if (e.target instanceof HTMLInputElement && e.target.type === 'checkbox') {
-        setUserProfile(prev => ({ ...prev, [name]: e.target.checked }));
+      // Se for, sabemos que a propriedade 'checked' existe e a usamos
+      setUserProfile(prev => ({ ...prev, [name]: e.target.checked }));
     } else {
-        setUserProfile(prev => ({ ...prev, [name]: value }));
+      // Para todos os outros casos (inputs de texto, selects), usamos a propriedade 'value'
+      setUserProfile(prev => ({ ...prev, [name]: e.target.value }));
     }
   };
   const isFormValid = userProfile.weight && userProfile.height && userProfile.age;

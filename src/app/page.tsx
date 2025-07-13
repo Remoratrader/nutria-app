@@ -99,17 +99,15 @@ const recipesData: Recipe[] = [
 // --- COMPONENTES FILHOS ---
 
 const ProfileForm: React.FC<{ userProfile: UserProfile; setUserProfile: React.Dispatch<React.SetStateAction<UserProfile>>; onProfileComplete: () => void; }> = ({ userProfile, setUserProfile, onProfileComplete }) => {
-  // CORREÇÃO: Função de handleChange agora é 100% type-safe
+  // CORREÇÃO FINAL: Função 100% type-safe para o build da Vercel
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name } = e.target;
+    const target = e.target as HTMLInputElement; // Afirma o tipo para acessar 'type' e 'checked'
 
-    // Primeiro, verificamos se o elemento é um input e do tipo checkbox
-    if (e.target instanceof HTMLInputElement && e.target.type === 'checkbox') {
-      // Se for, sabemos que a propriedade 'checked' existe e a usamos
-      setUserProfile(prev => ({ ...prev, [name]: e.target.checked }));
+    if (target.type === 'checkbox') {
+      setUserProfile(prev => ({ ...prev, [name]: target.checked }));
     } else {
-      // Para todos os outros casos (inputs de texto, selects), usamos a propriedade 'value'
-      setUserProfile(prev => ({ ...prev, [name]: e.target.value }));
+      setUserProfile(prev => ({ ...prev, [name]: target.value }));
     }
   };
   const isFormValid = userProfile.weight && userProfile.height && userProfile.age;

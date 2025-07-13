@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
   try {
+    // Apanha todas as variáveis enviadas pelo front-end
     const { prompt, dailyCalories, objective } = await req.json();
 
     if (!prompt) {
@@ -40,9 +41,12 @@ export async function POST(req: Request) {
       }
     };
 
-    // Prompt dinâmico e contextual
+    // --- PROMPT DINÂMICO E CONTEXTUAL ---
+
+    // 1. Persona Base
     let fullPrompt = `Você é uma nutricionista e planejadora de refeições para o aplicativo "NutrIA". Sua principal função é criar planos de refeições práticos, saudáveis e deliciosos em formato JSON.`;
 
+    // 2. Objetivo do Perfil
     if (objective === 'emagrecer') {
       fullPrompt += `\n\nFOCO PRINCIPAL: O objetivo do usuário é EMAGRECER. Priorize receitas com boa densidade nutricional, ricas em fibras e proteínas para aumentar a saciedade, e com calorias controladas.`;
     } else if (objective === 'definir') {
@@ -51,11 +55,13 @@ export async function POST(req: Request) {
       fullPrompt += `\n\nFOCO PRINCIPAL: O objetivo do usuário é GANHAR MASSA MUSCULAR. Crie receitas com superávit calórico, ricas em proteínas de alta qualidade e carboidratos complexos para energia e recuperação.`;
     }
 
-    fullPrompt += `\n\nSITUAÇÃO E PEDIDO DO USUÁRIO: Analise cuidadosamente o seguinte pedido: "${prompt}". Extraia todas as informações relevantes como duração (ex: '2 semanas'), número de pessoas, restrições (ex: 'sem geladeira', 'alergia a glúten', 'só frutas') e o cenário (ex: 'acampamento', 'viagem de luxo', 'lanches para o trabalho').`;
+    // 3. Contexto do Pedido do Usuário (incluindo calorias)
+    // CORREÇÃO: A variável dailyCalories está a ser usada aqui, resolvendo o erro do build.
+    fullPrompt += `\n\nSITUAÇÃO E PEDIDO DO USUÁRIO: Analise cuidadosamente o seguinte pedido, considerando uma meta calórica diária de aproximadamente ${dailyCalories || 2000} kcal: "${prompt}". Extraia todas as informações relevantes como duração (ex: '2 semanas'), número de pessoas, restrições (ex: 'sem geladeira', 'alergia a glúten', 'só frutas') e o cenário (ex: 'acampamento', 'viagem de luxo', 'lanches para o trabalho').`;
     
-    // ATUALIZAÇÃO: Adicionada a categoria "Mexicana"
+    // 4. Instruções Finais
     fullPrompt += `\n\nSUA TAREFA:
-      1.  **Planejamento Lógico:** Com base no pedido, determine a quantidade e o tipo de refeições necessárias. Se o pedido for para "2 pessoas por 2 semanas", isso significa um planejamento para 28 dias-pessoa (2x14). O número de receitas deve ser suficiente e variado para esse período.
+      1.  **Planejamento Lógico:** Com base no pedido, determine a quantidade e o tipo de refeições necessárias.
       2.  **Criação de Receitas:** Crie receitas que se alinhem com o FOCO PRINCIPAL e respeitem TODAS as restrições da SITUAÇÃO. As quantidades de ingredientes em cada receita devem ser para UMA ÚNICA PORÇÃO.
       3.  **Geração do JSON:** Retorne o resultado como um array JSON, seguindo o schema fornecido. As categorias possíveis são: Brasileiro, Fitness, Mediterranea, Asiatico, Vegana, Italiana, Francesa, Árabe, Fast Food, Inovadora, Café da Manhã, Sobremesa Saudável, Mexicana. Seja criativo, mas acima de tudo, seja PRÁTICO e LÓGICO.`;
 

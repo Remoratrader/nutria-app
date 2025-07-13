@@ -10,7 +10,7 @@ interface Ingredient {
   unit: string;
 }
 
-type RecipeCategory = 'Brasileiro' | 'Asiático' | 'Fitness' | 'Mediterrânea' | 'Vegana' | 'Italiana' | 'Francesa' | 'Árabe' | 'Mexicana' | 'Inovadora' | 'Café da Manhã' | 'Sobremesa Saudável' | 'Fast Food';
+type RecipeCategory = 'Brasileiro' | 'Asiático' | 'Fitness' | 'Mediterrânea' | 'Vegana' | 'Italiana' | 'Francesa' | 'Árabe' | 'Fast Food' | 'Inovadora' | 'Café da Manhã' | 'Sobremesa Saudável' | 'Mexicana';
 
 interface Recipe {
   id: number | string;
@@ -63,7 +63,7 @@ const recipesData: Recipe[] = [
     { id: 14, name: 'Sushi (Combo 10 peças)', category: 'Asiático', icon: '🍣', calories: 380, ingredients: [{ name: 'Arroz de Sushi', quantity: 150, unit: 'g' }, { name: 'Salmão', quantity: 80, unit: 'g' }, { name: 'Alga Nori', quantity: 10, unit: 'g' }], price: 40.00, instructions: "Monte os sushis com os ingredientes." },
     { id: 15, name: 'Frango Xadrez', category: 'Asiático', icon: '🥡', calories: 550, ingredients: [{ name: 'Frango em cubos', quantity: 150, unit: 'g' }, { name: 'Pimentão', quantity: 1, unit: 'un' }, { name: 'Amendoim', quantity: 30, unit: 'g' }], price: 27.00, instructions: "Frite o frango, adicione os pimentões e finalize com o molho shoyu e amendoim." },
     { id: 16, name: 'Rolinho Primavera (2 un)', category: 'Asiático', icon: '🫔', calories: 250, ingredients: [{ name: 'Massa para rolinho', quantity: 2, unit: 'un' }, { name: 'Repolho', quantity: 50, unit: 'g' }, { name: 'Carne moída', quantity: 50, unit: 'g' }], price: 15.00, instructions: "Recheie a massa com o refogado de carne e repolho e frite." },
-    { id: 37, name: 'Pad Thai', category: 'Asiático', icon: '�', calories: 650, ingredients: [{ name: 'Talharim de Arroz', quantity: 100, unit: 'g' }, { name: 'Camarão', quantity: 100, unit: 'g' }, { name: 'Amendoim', quantity: 20, unit: 'g' }], price: 39.00, instructions: "Salteie o camarão, adicione o macarrão cozido e o molho. Finalize com amendoim." },
+    { id: 37, name: 'Pad Thai', category: 'Asiático', icon: '🍤', calories: 650, ingredients: [{ name: 'Talharim de Arroz', quantity: 100, unit: 'g' }, { name: 'Camarão', quantity: 100, unit: 'g' }, { name: 'Amendoim', quantity: 20, unit: 'g' }], price: 39.00, instructions: "Salteie o camarão, adicione o macarrão cozido e o molho. Finalize com amendoim." },
     // Vegana (6)
     { id: 17, name: 'Strogonoff de Palmito', category: 'Vegana', icon: '🌴', calories: 450, ingredients: [{ name: 'Palmito Pupunha', quantity: 200, unit: 'g' }, { name: 'Creme de Leite de Castanha', quantity: 100, unit: 'g' }, { name: 'Champignon', quantity: 50, unit: 'g' }], price: 33.00, instructions: "Refogue o palmito e champignon, adicione o creme de castanha e temperos." },
     { id: 18, name: 'Bobó de Grão de Bico', category: 'Vegana', icon: '🥣', calories: 520, ingredients: [{ name: 'Grão de Bico', quantity: 150, unit: 'g' }, { name: 'Mandioca', quantity: 100, unit: 'g' }, { name: 'Leite de Coco', quantity: 100, unit: 'ml' }], price: 29.00, instructions: "Cozinhe o grão de bico. Bata a mandioca cozida com leite de coco para o creme. Misture." },
@@ -334,7 +334,11 @@ export default function NutriApp() {
   }, []);
 
   useEffect(() => {
+    try {
       localStorage.setItem('nutria-profile', JSON.stringify(userProfile));
+    } catch (error) {
+        console.error("Failed to save user profile to localStorage", error);
+    }
   }, [userProfile]);
 
 

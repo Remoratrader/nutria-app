@@ -12,7 +12,6 @@ export async function POST(req: Request) {
     }
 
     // 2. Pega a chave da API do Gemini das variáveis de ambiente do servidor (SECRETO)
-    //    Isso NUNCA fica exposto ao usuário.
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       throw new Error("A chave da API do Gemini não foi configurada no servidor.");
@@ -84,8 +83,9 @@ export async function POST(req: Request) {
       throw new Error("A resposta da IA não continha dados válidos.");
     }
 
-  } catch (error: any) {
+  } catch (error) { // CORREÇÃO APLICADA AQUI
     console.error("Erro no nosso endpoint /api/generate-menu:", error);
-    return NextResponse.json({ error: error.message || 'Ocorreu um erro interno.' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Ocorreu um erro interno.';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

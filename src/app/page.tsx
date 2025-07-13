@@ -223,7 +223,7 @@ const AIMenuGenerator: React.FC<{
         <h2 className="mt-4 text-3xl font-bold text-gray-800">Chef com IA</h2>
         <p className="mt-2 text-gray-500">Descreva o cardápio que você deseja.</p>
         {/* CORREÇÃO: Aspas duplas trocadas por simples */}
-        <p className="mt-1 text-xs text-gray-400">Ex: 'Um plano semanal com 5 jantares e 3 almoços, low carb'</p>
+        <p className="mt-1 text-xs text-gray-400">Ex: &apos;Um plano semanal com 5 jantares e 3 almoços, low carb&apos;</p>
       </div>
       <div className="space-y-4">
         <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} className="w-full h-28 p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 text-gray-900" placeholder="Eu preciso de..." />

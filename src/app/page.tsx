@@ -1,20 +1,22 @@
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
-import { Leaf, ShoppingCart, User, UtensilsCrossed, Heart, ArrowLeft, Send, Bot, Sparkles, LoaderCircle, Droplets, Coffee, Package, Sandwich, MinusCircle, PlusCircle, BookOpen, ChevronDown } from 'lucide-react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { Leaf, ShoppingCart, User, UtensilsCrossed, Heart, ArrowLeft, Send, Bot, Sparkles, LoaderCircle, Droplets, Coffee, Package, Sandwich, MinusCircle, PlusCircle, BookOpen, ChevronDown, WheatOff, Snowflake, Utensils, Wallet, Baby, Carrot, Dumbbell, BedDouble, Wheat, List } from 'lucide-react';
 
-// --- INTERFACES E TIPOS ATUALIZADOS ---
+// --- INTERFACES E TIPOS ---
 interface Ingredient {
   name: string;
   quantity: number;
   unit: string;
 }
 
+type RecipeCategory = 'Brasileiro' | 'Asiático' | 'Fitness' | 'Mediterrânea' | 'Vegana' | 'Italiana' | 'Francesa' | 'Árabe' | 'Fast Food' | 'Inovadora' | 'Café da Manhã' | 'Sobremesa Saudável' | 'Mexicana';
+
 interface Recipe {
   id: number | string;
   name: string;
-  category: 'Brasileiro' | 'Asiático' | 'Fitness' | 'Mediterrânea' | 'Vegana' | 'Italiana' | 'Francesa' | 'Árabe' | 'Fast Food' | 'Inovadora';
-  icon: string; // Emoji para a receita
+  category: RecipeCategory;
+  icon: string;
   calories: number;
   ingredients: Ingredient[];
   price?: number;
@@ -29,24 +31,25 @@ interface UserProfile {
   activityLevel: number;
   wantsSnacks: boolean;
   wantsInnovative: boolean;
+  objective: 'emagrecer' | 'definir' | 'ganhar massa';
 }
 
 type View = 'welcome' | 'profile' | 'recommendations' | 'menu' | 'shopping' | 'aiMenu';
 
-// --- DADOS MOCKADOS (TOTAL: 52 RECEITAS) ---
+// --- DADOS MOCKADOS (TOTAL: 64 RECEITAS) ---
 const recipesData: Recipe[] = [
     // Brasileiro (6)
     { id: 1, name: 'Feijoada Leve', category: 'Brasileiro', icon: '🍲', calories: 650, ingredients: [{ name: 'Feijão Preto', quantity: 200, unit: 'g' }, { name: 'Carne Seca', quantity: 100, unit: 'g' }, { name: 'Couve', quantity: 50, unit: 'g' }], price: 30.00, instructions: "Cozinhe o feijão com a carne dessalgada. Refogue a couve." },
     { id: 2, name: 'Moqueca de Banana da Terra', category: 'Brasileiro', icon: '🍌', calories: 500, ingredients: [{ name: 'Banana da Terra', quantity: 2, unit: 'un' }, { name: 'Leite de Coco', quantity: 200, unit: 'ml' }, { name: 'Azeite de Dendê', quantity: 20, unit: 'ml' }], price: 27.00, instructions: "Refogue os temperos, adicione a banana e o leite de coco, cozinhe até amaciar." },
     { id: 3, name: 'Vaca Atolada', category: 'Brasileiro', icon: '🐄', calories: 700, ingredients: [{ name: 'Costela Bovina', quantity: 200, unit: 'g' }, { name: 'Mandioca', quantity: 150, unit: 'g' }, { name: 'Tomate', quantity: 1, unit: 'un' }], price: 32.00, instructions: "Cozinhe a costela na pressão. Adicione a mandioca e cozinhe até ficar macia." },
-    { id: 4, name: 'Pão de Queijo', category: 'Brasileiro', icon: '🧀', calories: 150, ingredients: [{ name: 'Polvilho Doce', quantity: 100, unit: 'g' }, { name: 'Queijo Minas', quantity: 50, unit: 'g' }, { name: 'Ovo', quantity: 1, unit: 'un' }], price: 8.00, instructions: "Misture todos os ingredientes, faça bolinhas e asse até dourar." },
+    { id: 4, name: 'Pão de Queijo', category: 'Café da Manhã', icon: '🧀', calories: 150, ingredients: [{ name: 'Polvilho Doce', quantity: 100, unit: 'g' }, { name: 'Queijo Minas', quantity: 50, unit: 'g' }, { name: 'Ovo', quantity: 1, unit: 'un' }], price: 8.00, instructions: "Misture todos os ingredientes, faça bolinhas e asse até dourar." },
     { id: 21, name: 'Galinhada', category: 'Brasileiro', icon: '🐔', calories: 580, ingredients: [{ name: 'Frango em pedaços', quantity: 200, unit: 'g' }, { name: 'Arroz', quantity: 100, unit: 'g' }, { name: 'Açafrão', quantity: 5, unit: 'g' }], price: 26.00, instructions: "Refogue o frango com temperos, adicione o arroz e açafrão, e cozinhe." },
     { id: 35, name: 'Escondidinho de Carne Seca', category: 'Brasileiro', icon: '🥔', calories: 620, ingredients: [{ name: 'Mandioca', quantity: 300, unit: 'g' }, { name: 'Carne Seca Desfiada', quantity: 150, unit: 'g' }, { name: 'Queijo Coalho', quantity: 50, unit: 'g' }], price: 33.00, instructions: "Faça um purê com a mandioca. Refogue a carne seca. Monte em camadas e gratine com o queijo." },
     // Fitness (6)
     { id: 5, name: 'Frango Grelhado com Batata Doce', category: 'Fitness', icon: '💪', calories: 450, ingredients: [{ name: 'Filé de Frango', quantity: 150, unit: 'g' }, { name: 'Batata Doce', quantity: 200, unit: 'g' }, { name: 'Brócolis', quantity: 100, unit: 'g' }], price: 25.00, instructions: "Grelhe o frango. Cozinhe a batata doce e o brócolis no vapor." },
-    { id: 6, name: 'Omelete com Queijo e Tomate', category: 'Fitness', icon: '🥚', calories: 350, ingredients: [{ name: 'Ovo', quantity: 3, unit: 'un' }, { name: 'Queijo Minas', quantity: 50, unit: 'g' }, { name: 'Tomate', quantity: 1, unit: 'un' }], price: 20.00, instructions: "Bata os ovos, adicione o queijo e tomate picado, e cozinhe na frigideira." },
+    { id: 6, name: 'Omelete com Queijo e Tomate', category: 'Café da Manhã', icon: '🥚', calories: 350, ingredients: [{ name: 'Ovo', quantity: 3, unit: 'un' }, { name: 'Queijo Minas', quantity: 50, unit: 'g' }, { name: 'Tomate', quantity: 1, unit: 'un' }], price: 20.00, instructions: "Bata os ovos, adicione o queijo e tomate picado, e cozinhe na frigideira." },
     { id: 7, name: 'Wrap de Alface com Carne Moída', category: 'Fitness', icon: '🥬', calories: 400, ingredients: [{ name: 'Folhas de Alface Grandes', quantity: 4, unit: 'un' }, { name: 'Carne Moída (Patinho)', quantity: 150, unit: 'g' }, { name: 'Cenoura Ralada', quantity: 50, unit: 'g' }], price: 22.00, instructions: "Refogue a carne moída com temperos. Sirva dentro das folhas de alface." },
-    { id: 8, name: 'Crepioca com Cottage', category: 'Fitness', icon: '🥞', calories: 380, ingredients: [{ name: 'Goma de Tapioca', quantity: 3, unit: 'colheres de sopa' }, { name: 'Ovo', quantity: 1, unit: 'un' }, { name: 'Queijo Cottage', quantity: 50, unit: 'g' }], price: 18.00, instructions: "Misture a goma e o ovo, despeje na frigideira. Recheie com o cottage." },
+    { id: 8, name: 'Crepioca com Cottage', category: 'Café da Manhã', icon: '🥞', calories: 380, ingredients: [{ name: 'Goma de Tapioca', quantity: 3, unit: 'colheres de sopa' }, { name: 'Ovo', quantity: 1, unit: 'un' }, { name: 'Queijo Cottage', quantity: 50, unit: 'g' }], price: 18.00, instructions: "Misture a goma e o ovo, despeje na frigideira. Recheie com o cottage." },
     { id: 22, name: 'Salada de Quinoa com Abacate', category: 'Fitness', icon: '🥑', calories: 420, ingredients: [{ name: 'Quinoa Cozida', quantity: 100, unit: 'g' }, { name: 'Abacate', quantity: 0.5, unit: 'un' }, { name: 'Tomate Cereja', quantity: 50, unit: 'g' }], price: 28.00, instructions: "Misture a quinoa, o abacate em cubos e os tomates. Tempere com limão." },
     { id: 36, name: 'Shake de Proteína com Banana', category: 'Inovadora', icon: '🥤', calories: 300, ingredients: [{ name: 'Whey Protein', quantity: 30, unit: 'g' }, { name: 'Banana Congelada', quantity: 1, unit: 'un' }, { name: 'Leite Desnatado', quantity: 200, unit: 'ml' }], price: 15.00, instructions: "Bata todos os ingredientes no liquidificador até ficar homogêneo." },
     // Mediterrânea (5)
@@ -89,20 +92,34 @@ const recipesData: Recipe[] = [
     { id: 43, name: 'Hambúrguer Caseiro na Grelha', category: 'Fast Food', icon: '🍔', calories: 600, ingredients: [{ name: 'Pão de Hambúrguer Integral', quantity: 1, unit: 'un' }, { name: 'Carne Moída (Patinho)', quantity: 150, unit: 'g' }, { name: 'Alface e Tomate', quantity: 1, unit: 'a gosto' }], price: 25.00, instructions: "Molde e grelhe o hambúrguer. Monte o sanduíche com salada." },
     { id: 44, name: 'Pizza de Frigideira', category: 'Fast Food', icon: '🍕', calories: 550, ingredients: [{ name: 'Massa de Rap10', quantity: 1, unit: 'un' }, { name: 'Molho de Tomate', quantity: 50, unit: 'ml' }, { name: 'Queijo Muçarela', quantity: 80, unit: 'g' }], price: 20.00, instructions: "Aqueça a massa na frigideira, adicione molho e queijo, tampe para derreter." },
     { id: 45, name: 'Batata Rústica Assada', category: 'Fast Food', icon: '🍟', calories: 350, ingredients: [{ name: 'Batata Inglesa', quantity: 200, unit: 'g' }, { name: 'Azeite', quantity: 15, unit: 'ml' }, { name: 'Páprica', quantity: 5, unit: 'g' }], price: 15.00, instructions: "Corte as batatas em gomos, tempere com azeite e páprica, e asse até dourar." },
-    { id: 46, name: 'Tacos de Frango', category: 'Fast Food', icon: '🌮', calories: 480, ingredients: [{ name: 'Massa de Taco', quantity: 2, unit: 'un' }, { name: 'Frango Desfiado', quantity: 100, unit: 'g' }, { name: 'Abacate', quantity: 50, unit: 'g' }], price: 26.00, instructions: "Aqueça as massas de taco. Recheie com frango e guacamole (abacate amassado)." },
+    { id: 46, name: 'Tacos de Frango', category: 'Mexicana', icon: '🌮', calories: 480, ingredients: [{ name: 'Massa de Taco', quantity: 2, unit: 'un' }, { name: 'Frango Desfiado', quantity: 100, unit: 'g' }, { name: 'Abacate', quantity: 50, unit: 'g' }], price: 26.00, instructions: "Aqueça as massas de taco. Recheie com frango e guacamole (abacate amassado)." },
     // Inovadora (2)
-    { id: 47, name: 'Mousse de Whey com Morango', category: 'Inovadora', icon: '🍓', calories: 250, ingredients: [{ name: 'Whey Protein Baunilha', quantity: 30, unit: 'g' }, { name: 'Morangos Congelados', quantity: 100, unit: 'g' }, { name: 'Iogurte Grego', quantity: 50, unit: 'g' }], price: 20.00, instructions: "Bata todos os ingredientes no processador até obter uma consistência de mousse." },
+    { id: 47, name: 'Mousse de Whey com Morango', category: 'Sobremesa Saudável', icon: '🍓', calories: 250, ingredients: [{ name: 'Whey Protein Baunilha', quantity: 30, unit: 'g' }, { name: 'Morangos Congelados', quantity: 100, unit: 'g' }, { name: 'Iogurte Grego', quantity: 50, unit: 'g' }], price: 20.00, instructions: "Bata todos os ingredientes no processador até obter uma consistência de mousse." },
     { id: 48, name: 'Panqueca de Whey e Aveia', category: 'Inovadora', icon: '🥞', calories: 350, ingredients: [{ name: 'Whey Protein Chocolate', quantity: 30, unit: 'g' }, { name: 'Farinha de Aveia', quantity: 50, unit: 'g' }, { name: 'Ovo', quantity: 1, unit: 'un' }], price: 18.00, instructions: "Misture todos os ingredientes com um pouco de água ou leite até formar uma massa. Despeje na frigideira quente." },
+    // Café da Manhã (4)
+    { id: 49, name: 'Panquecas Americanas com Mel', category: 'Café da Manhã', icon: '🥞', calories: 450, ingredients: [{ name: 'Farinha de Trigo', quantity: 100, unit: 'g' }, { name: 'Ovo', quantity: 1, unit: 'un' }, { name: 'Leite', quantity: 120, unit: 'ml' }, { name: 'Mel', quantity: 20, unit: 'ml' }], price: 15.00, instructions: "Misture os ingredientes secos, depois os molhados. Frite pequenas porções em uma frigideira e sirva com mel." },
+    { id: 50, name: 'Overnight Oats com Frutas', category: 'Café da Manhã', icon: '🥣', calories: 380, ingredients: [{ name: 'Aveia em Flocos', quantity: 50, unit: 'g' }, { name: 'Iogurte Natural', quantity: 100, unit: 'g' }, { name: 'Sementes de Chia', quantity: 10, unit: 'g' }, { name: 'Frutas Vermelhas', quantity: 50, unit: 'g' }], price: 18.00, instructions: "Em um pote, misture a aveia, iogurte e chia. Deixe na geladeira durante a noite. Sirva com frutas por cima." },
+    { id: 51, name: 'Abacate com Ovo no Pão Integral', category: 'Café da Manhã', icon: '🥑', calories: 420, ingredients: [{ name: 'Pão Integral', quantity: 2, unit: 'fatias' }, { name: 'Abacate', quantity: 0.5, unit: 'un' }, { name: 'Ovo', quantity: 1, unit: 'un' }], price: 16.00, instructions: "Torre o pão. Amasse o abacate e espalhe sobre as torradas. Sirva com um ovo frito ou cozido por cima." },
+    { id: 52, name: 'Smoothie Verde Detox', category: 'Café da Manhã', icon: '🍹', calories: 250, ingredients: [{ name: 'Couve', quantity: 2, unit: 'folhas' }, { name: 'Maçã', quantity: 1, unit: 'un' }, { name: 'Gengibre', quantity: 5, unit: 'g' }, { name: 'Água de Coco', quantity: 200, unit: 'ml' }], price: 14.00, instructions: "Bata todos os ingredientes no liquidificador até ficar homogêneo." },
+    // Sobremesas Saudáveis (4)
+    { id: 53, name: 'Brownie de Batata Doce', category: 'Sobremesa Saudável', icon: '🍫', calories: 280, ingredients: [{ name: 'Batata Doce Cozida', quantity: 200, unit: 'g' }, { name: 'Cacau em Pó', quantity: 30, unit: 'g' }, { name: 'Ovos', quantity: 2, unit: 'un' }, { name: 'Mel', quantity: 50, unit: 'ml' }], price: 22.00, instructions: "Amasse a batata doce e misture com os outros ingredientes. Asse em forno médio por 25 minutos." },
+    { id: 54, name: 'Sorvete de Banana Congelada', category: 'Sobremesa Saudável', icon: '🍦', calories: 150, ingredients: [{ name: 'Banana Prata Congelada', quantity: 2, unit: 'un' }], price: 10.00, instructions: "Bata as bananas congeladas em um processador potente até obter uma consistência cremosa de sorvete." },
+    { id: 55, name: 'Bolo de Caneca Fit', category: 'Sobremesa Saudável', icon: '🍰', calories: 300, ingredients: [{ name: 'Farinha de Aveia', quantity: 4, unit: 'colheres de sopa' }, { name: 'Ovo', quantity: 1, unit: 'un' }, { name: 'Cacau em Pó', quantity: 1, unit: 'colher de sopa' }, { name: 'Fermento', quantity: 0.5, unit: 'colher de chá' }], price: 12.00, instructions: "Misture todos os ingredientes em uma caneca e leve ao micro-ondas por cerca de 2 minutos." },
+    { id: 56, name: 'Maçã Assada com Canela', category: 'Sobremesa Saudável', icon: '🍎', calories: 120, ingredients: [{ name: 'Maçã', quantity: 1, unit: 'un' }, { name: 'Canela em Pó', quantity: 1, unit: 'a gosto' }], price: 8.00, instructions: "Retire o miolo da maçã, polvilhe canela e asse até ficar macia." },
+    // Mexicana (4)
+    { id: 57, name: 'Guacamole com Tortillas', category: 'Mexicana', icon: '🥑', calories: 350, ingredients: [{ name: 'Abacate', quantity: 1, unit: 'un' }, { name: 'Cebola Roxa', quantity: 0.25, unit: 'un' }, { name: 'Tomate', quantity: 1, unit: 'un' }, { name: 'Tortillas de Milho', quantity: 50, unit: 'g' }], price: 25.00, instructions: "Amasse o abacate, misture com cebola, tomate e coentro picados. Tempere com limão e sal. Sirva com as tortillas." },
+    { id: 58, name: 'Burritos de Feijão e Carne', category: 'Mexicana', icon: '🌯', calories: 650, ingredients: [{ name: 'Tortilla de Trigo', quantity: 1, unit: 'grande' }, { name: 'Carne Moída', quantity: 100, unit: 'g' }, { name: 'Feijão Preto Cozido', quantity: 100, unit: 'g' }, { name: 'Arroz Cozido', quantity: 50, unit: 'g' }], price: 30.00, instructions: "Refogue a carne moída. Aqueça a tortilla, recheie com a carne, feijão e arroz. Enrole bem." },
+    { id: 59, name: 'Chilli com Carne', category: 'Mexicana', icon: '🌶️', calories: 550, ingredients: [{ name: 'Carne Moída', quantity: 150, unit: 'g' }, { name: 'Feijão Vermelho Cozido', quantity: 150, unit: 'g' }, { name: 'Molho de Tomate', quantity: 100, unit: 'ml' }, { name: 'Pimenta em Pó', quantity: 1, unit: 'colher de chá' }], price: 28.00, instructions: "Refogue a carne, adicione o feijão, molho e temperos. Cozinhe em fogo baixo por 20 minutos." },
+    { id: 60, name: 'Quesadillas de Queijo e Frango', category: 'Mexicana', icon: '🧀', calories: 500, ingredients: [{ name: 'Tortilla de Trigo', quantity: 1, unit: 'grande' }, { name: 'Frango Desfiado', quantity: 80, unit: 'g' }, { name: 'Queijo Muçarela', quantity: 80, unit: 'g' }], price: 26.00, instructions: "Recheie metade da tortilla com o frango e queijo, dobre e grelhe na frigideira dos dois lados até dourar." },
 ];
 
 
 // --- COMPONENTES FILHOS ---
 
 const ProfileForm: React.FC<{ userProfile: UserProfile; setUserProfile: React.Dispatch<React.SetStateAction<UserProfile>>; onProfileComplete: () => void; }> = ({ userProfile, setUserProfile, onProfileComplete }) => {
-  // CORREÇÃO FINAL: Função 100% type-safe para o build da Vercel
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name } = e.target;
-    const target = e.target as HTMLInputElement; // Afirma o tipo para acessar 'type' e 'checked'
+    const target = e.target as HTMLInputElement;
 
     if (target.type === 'checkbox') {
       setUserProfile(prev => ({ ...prev, [name]: target.checked }));
@@ -130,6 +147,14 @@ const ProfileForm: React.FC<{ userProfile: UserProfile; setUserProfile: React.Di
         <div>
           <label htmlFor="age" className="text-sm font-medium text-gray-700">Idade</label>
           <input type="number" name="age" id="age" value={userProfile.age} onChange={handleChange} className="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 text-gray-900 placeholder:text-gray-400" placeholder="Ex: 30" />
+        </div>
+        <div>
+          <label htmlFor="objective" className="text-sm font-medium text-gray-700">Qual seu objetivo?</label>
+          <select name="objective" id="objective" value={userProfile.objective} onChange={handleChange} className="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 text-gray-900">
+            <option value="emagrecer">Emagrecer</option>
+            <option value="definir">Definição Muscular</option>
+            <option value="ganhar massa">Ganhar Massa Muscular</option>
+          </select>
         </div>
         <div>
           <label htmlFor="gender" className="text-sm font-medium text-gray-700">Gênero</label>
@@ -166,21 +191,51 @@ const ProfileForm: React.FC<{ userProfile: UserProfile; setUserProfile: React.Di
   );
 };
 
-const AIMenuGenerator: React.FC<{
+const AIAssistant: React.FC<{
   setAiGeneratedMeals: React.Dispatch<React.SetStateAction<Recipe[]>>;
   updateMealCount: (recipe: Recipe, delta: number) => void;
   setCurrentView: React.Dispatch<React.SetStateAction<View>>;
   dailyCalories: number;
-}> = ({ setAiGeneratedMeals, updateMealCount, setCurrentView, dailyCalories }) => {
+  objective: string;
+}> = ({ setAiGeneratedMeals, updateMealCount, setCurrentView, dailyCalories, objective }) => {
   const [prompt, setPrompt] = useState('');
+  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const preferenceTags = [
+      { id: 'sem-gluten', label: 'Sem Glúten', icon: <WheatOff size={16}/>, group: 'Restritivas' },
+      { id: 'sem-carne', label: 'Sem Carne', icon: <Carrot size={16}/>, group: 'Restritivas' },
+      { id: 'sem-derivados-animais', label: 'Sem Derivados Animais', icon: <Leaf size={16}/>, group: 'Restritivas' },
+      { id: 'sem-acucar', label: 'Sem Açúcar', icon: <span className="font-bold text-sm">A</span>, group: 'Restritivas' },
+      { id: 'sem-sal', label: 'Sem Sal', icon: <span className="font-bold text-sm">S</span>, group: 'Restritivas' },
+      { id: 'sem-geladeira', label: 'Sem Geladeira', icon: <Snowflake size={16}/>, group: 'Preparo' },
+      { id: 'sem-fogo', label: 'Sem Fogo', icon: <Utensils size={16}/>, group: 'Preparo' },
+      { id: 'base-graos', label: 'À Base de Grãos', icon: <Wheat size={16}/>, group: 'Base do Prato' },
+      { id: 'fitness', label: 'Fitness', icon: <Dumbbell size={16}/>, group: 'Estilo de Vida' },
+      { id: 'rapido-barato', label: 'Rápido e Barato', icon: <Wallet size={16}/>, group: 'Estilo de Vida' },
+      { id: 'para-criancas', label: 'Para Crianças', icon: <Baby size={16}/>, group: 'Estilo de Vida' },
+      { id: 'comer-dormir', label: 'Comer e Dormir', icon: <BedDouble size={16}/>, group: 'Estilo de Vida' },
+  ];
+  
+  const tagGroups = [...new Set(preferenceTags.map(tag => tag.group))];
+
+  const handleTagClick = (tagId: string) => {
+      setSelectedTags(prevTags => {
+          const newTags = new Set(prevTags);
+          if (newTags.has(tagId)) {
+              newTags.delete(tagId);
+          } else {
+              newTags.add(tagId);
+          }
+          return newTags;
+      });
+  };
+
   const handleGenerate = async () => {
-    if (!prompt) {
-      setError('Por favor, descreva o que você precisa.');
-      return;
-    }
+    const tagsText = Array.from(selectedTags).join(', ');
+    const fullUserRequest = `Restrições e preferências selecionadas: [${tagsText}]. Pedido adicional do usuário: "${prompt}"`;
+    
     setIsLoading(true);
     setError('');
 
@@ -188,7 +243,7 @@ const AIMenuGenerator: React.FC<{
       const response = await fetch('/api/generate-menu', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, dailyCalories }),
+        body: JSON.stringify({ prompt: fullUserRequest, dailyCalories, objective }),
       });
 
       if (!response.ok) {
@@ -196,15 +251,15 @@ const AIMenuGenerator: React.FC<{
         throw new Error(err.error || 'Erro ao se comunicar com a IA.');
       }
 
-      const generatedRecipes = await response.json();
+      const generatedRecipes: Recipe[] = await response.json();
       
-      const recipesWithIds = generatedRecipes.map((recipe: Omit<Recipe, 'id'>) => ({
+      const recipesWithIds = generatedRecipes.map((recipe) => ({
         ...recipe,
         id: `ai-${crypto.randomUUID()}`
       }));
 
       setAiGeneratedMeals(recipesWithIds);
-      recipesWithIds.forEach((recipe: Recipe) => updateMealCount(recipe, 1));
+      recipesWithIds.forEach((recipe) => updateMealCount(recipe, 1));
       setCurrentView('shopping');
 
     } catch (e) {
@@ -217,17 +272,32 @@ const AIMenuGenerator: React.FC<{
   };
 
   return (
-    <div className="w-full max-w-lg p-8 space-y-6 bg-white rounded-2xl shadow-lg animate-fade-in">
+    <div className="w-full max-w-2xl p-8 space-y-6 bg-white rounded-2xl shadow-lg animate-fade-in">
       <div className="text-center">
         <Bot className="mx-auto h-12 w-12 text-green-500" />
-        <h2 className="mt-4 text-3xl font-bold text-gray-800">Chef com IA</h2>
-        <p className="mt-2 text-gray-500">Descreva o cardápio que você deseja.</p>
-        <p className="mt-1 text-xs text-gray-400">Ex: &apos;Um plano semanal com 5 jantares e 3 almoços, low carb&apos;</p>
+        <h2 className="mt-4 text-3xl font-bold text-gray-800">Assistente de Cardápio IA</h2>
+        <p className="mt-2 text-gray-500">Selecione suas preferências e descreva seu plano.</p>
       </div>
-      <div className="space-y-4">
-        <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} className="w-full h-28 p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 text-gray-900" placeholder="Eu preciso de..." />
+      
+      {tagGroups.map(group => (
+        <div key={group}>
+            <h3 className="text-sm font-semibold text-gray-600 mb-2">{group}</h3>
+            <div className="flex flex-wrap gap-2">
+                {preferenceTags.filter(tag => tag.group === group).map(tag => (
+                    <button key={tag.id} onClick={() => handleTagClick(tag.id)} className={`flex items-center gap-2 px-3 py-2 text-sm rounded-full transition-colors ${selectedTags.has(tag.id) ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
+                        {tag.icon}
+                        {tag.label}
+                    </button>
+                ))}
+            </div>
+        </div>
+      ))}
+      
+      <div className="space-y-4 pt-4">
+        <label htmlFor="prompt" className="text-sm font-semibold text-gray-600">Detalhes adicionais (opcional)</label>
+        <textarea id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} className="w-full h-24 p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 text-gray-900" placeholder="Ex: 'Plano para uma viagem de 1 semana para a casa da sogra, preciso de lanches práticos...'" />
         {error && <p className="text-sm text-red-600">{error}</p>}
-        <button onClick={handleGenerate} disabled={isLoading} className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:bg-gray-400">
+        <button onClick={handleGenerate} disabled={isLoading || (prompt === '' && selectedTags.size === 0)} className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:bg-gray-400">
           {isLoading ? <LoaderCircle className="animate-spin h-5 w-5 mr-2" /> : <Sparkles className="h-5 w-5 mr-2" />}
           {isLoading ? 'Gerando...' : 'Gerar Cardápio e Lista de Compras'}
         </button>
@@ -243,10 +313,30 @@ const AIMenuGenerator: React.FC<{
 // --- COMPONENTE PRINCIPAL (Orquestrador) ---
 export default function NutriApp() {
   const [currentView, setCurrentView] = useState<View>('welcome');
-  const [userProfile, setUserProfile] = useState<UserProfile>({ weight: '70', height: '175', age: '30', gender: 'male', activityLevel: 1.55, wantsSnacks: false, wantsInnovative: false });
+  const [userProfile, setUserProfile] = useState<UserProfile>({ 
+      weight: '', height: '', age: '', 
+      gender: 'male', activityLevel: 1.55, 
+      wantsSnacks: false, wantsInnovative: false, objective: 'emagrecer' 
+  });
   const [selectedMeals, setSelectedMeals] = useState<Map<string | number, number>>(new Map());
   const [aiGeneratedMeals, setAiGeneratedMeals] = useState<Recipe[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
+
+  useEffect(() => {
+    try {
+        const savedProfile = localStorage.getItem('nutria-profile');
+        if (savedProfile) {
+            setUserProfile(JSON.parse(savedProfile));
+        }
+    } catch (error) {
+        console.error("Failed to parse user profile from localStorage", error);
+    }
+  }, []);
+
+  useEffect(() => {
+      localStorage.setItem('nutria-profile', JSON.stringify(userProfile));
+  }, [userProfile]);
+
 
   const allRecipes = useMemo(() => [...recipesData, ...aiGeneratedMeals], [aiGeneratedMeals]);
 
@@ -322,7 +412,7 @@ export default function NutriApp() {
   };
   
   const renderView = () => {
-    const baseCategories: Recipe['category'][] = ['Brasileiro', 'Fitness', 'Mediterrânea', 'Italiana', 'Francesa', 'Árabe', 'Fast Food', 'Asiático', 'Vegana'];
+    const baseCategories: RecipeCategory[] = ['Café da Manhã', 'Brasileiro', 'Mexicana', 'Fitness', 'Mediterrânea', 'Italiana', 'Francesa', 'Árabe', 'Fast Food', 'Asiático', 'Vegana', 'Sobremesa Saudável'];
     const categories = userProfile.wantsInnovative ? [...baseCategories, 'Inovadora'] : baseCategories;
     
     switch (currentView) {
@@ -356,7 +446,7 @@ export default function NutriApp() {
         );
 
       case 'aiMenu':
-        return <AIMenuGenerator setAiGeneratedMeals={setAiGeneratedMeals} updateMealCount={updateMealCount} setCurrentView={setCurrentView} dailyCalories={dailyCalories} />;
+        return <AIAssistant setAiGeneratedMeals={setAiGeneratedMeals} updateMealCount={updateMealCount} setCurrentView={setCurrentView} dailyCalories={dailyCalories} objective={userProfile.objective} />;
       
       case 'menu':
         const totalCalories = Array.from(selectedMeals.entries()).reduce((acc, [recipeId, count]) => {
@@ -384,9 +474,17 @@ export default function NutriApp() {
                             <p className="text-sm text-gray-600">{recipe.calories} kcal - {recipe.category}</p>
                             <details className="text-xs mt-2 group">
                                 <summary className="cursor-pointer font-medium text-green-600 hover:text-green-800 list-none flex items-center p-1 -ml-1">
+                                    <List size={14} className="mr-1" />
+                                    Ingredientes
+                                </summary>
+                                <ul className="mt-2 p-2 bg-white rounded-md text-gray-700 text-sm list-disc list-inside">
+                                    {recipe.ingredients.map(ing => <li key={ing.name}>{ing.name}: {ing.quantity}{ing.unit}</li>)}
+                                </ul>
+                            </details>
+                            <details className="text-xs mt-2 group">
+                                <summary className="cursor-pointer font-medium text-green-600 hover:text-green-800 list-none flex items-center p-1 -ml-1">
                                     <BookOpen size={14} className="mr-1" />
                                     Modo de Preparo
-                                    <ChevronDown size={16} className="ml-auto group-open:rotate-180 transition-transform"/>
                                 </summary>
                                 <p className="mt-2 p-2 bg-white rounded-md text-gray-700 text-sm">{recipe.instructions || 'Instruções não disponíveis.'}</p>
                             </details>

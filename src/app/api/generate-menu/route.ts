@@ -1,23 +1,18 @@
 import { NextResponse } from 'next/server';
 
-// Esta função será o nosso endpoint de API seguro.
-// Ela roda apenas no servidor, protegendo nossos segredos.
 export async function POST(req: Request) {
   try {
-    // 1. Recebe os dados enviados pelo front-end (apenas o que é seguro compartilhar)
-    const { prompt, dailyCalories } = await req.json();
+    const { prompt, dailyCalories, objective } = await req.json();
 
     if (!prompt) {
       return NextResponse.json({ error: 'O prompt do usuário é obrigatório.' }, { status: 400 });
     }
 
-    // 2. Pega a chave da API do Gemini das variáveis de ambiente do servidor (SECRETO)
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       throw new Error("A chave da API do Gemini não foi configurada no servidor.");
     }
 
-    // 3. Define o schema (a estrutura JSON que esperamos da IA)
     const schema = {
       type: "ARRAY",
       items: {
@@ -45,8 +40,24 @@ export async function POST(req: Request) {
       }
     };
 
-    // 4. Monta o prompt completo, combinando nossa lógica secreta com o pedido do usuário (NOSSO DIFERENCIAL)
-    const fullPrompt = `Você é um chef nutricionista para o app "NutrIA". Um usuário precisa de um cardápio com uma necessidade calórica diária de aproximadamente ${dailyCalories || 2000} kcal. O pedido do usuário é: "${prompt}". Gere uma lista de receitas em JSON que atendam a esse pedido. Atribua um emoji apropriado no campo 'icon'. Categorias podem ser: Brasileiro, Fitness, Mediterranea, Asiatico, Vegana, Italiana, Francesa, Árabe, Fast Food, Inovadora.`;
+    // Prompt dinâmico e contextual
+    let fullPrompt = `Você é uma nutricionista e planejadora de refeições para o aplicativo "NutrIA". Sua principal função é criar planos de refeições práticos, saudáveis e deliciosos em formato JSON.`;
+
+    if (objective === 'emagrecer') {
+      fullPrompt += `\n\nFOCO PRINCIPAL: O objetivo do usuário é EMAGRECER. Priorize receitas com boa densidade nutricional, ricas em fibras e proteínas para aumentar a saciedade, e com calorias controladas.`;
+    } else if (objective === 'definir') {
+      fullPrompt += `\n\nFOCO PRINCIPAL: O objetivo do usuário é DEFINIÇÃO MUSCULAR. Elabore um plano com alto teor de proteína magra, carboidratos moderados e gorduras saudáveis para apoiar a manutenção muscular durante a perda de gordura.`;
+    } else if (objective === 'ganhar massa') {
+      fullPrompt += `\n\nFOCO PRINCIPAL: O objetivo do usuário é GANHAR MASSA MUSCULAR. Crie receitas com superávit calórico, ricas em proteínas de alta qualidade e carboidratos complexos para energia e recuperação.`;
+    }
+
+    fullPrompt += `\n\nSITUAÇÃO E PEDIDO DO USUÁRIO: Analise cuidadosamente o seguinte pedido: "${prompt}". Extraia todas as informações relevantes como duração (ex: '2 semanas'), número de pessoas, restrições (ex: 'sem geladeira', 'alergia a glúten', 'só frutas') e o cenário (ex: 'acampamento', 'viagem de luxo', 'lanches para o trabalho').`;
+    
+    // ATUALIZAÇÃO: Adicionada a categoria "Mexicana"
+    fullPrompt += `\n\nSUA TAREFA:
+      1.  **Planejamento Lógico:** Com base no pedido, determine a quantidade e o tipo de refeições necessárias. Se o pedido for para "2 pessoas por 2 semanas", isso significa um planejamento para 28 dias-pessoa (2x14). O número de receitas deve ser suficiente e variado para esse período.
+      2.  **Criação de Receitas:** Crie receitas que se alinhem com o FOCO PRINCIPAL e respeitem TODAS as restrições da SITUAÇÃO. As quantidades de ingredientes em cada receita devem ser para UMA ÚNICA PORÇÃO.
+      3.  **Geração do JSON:** Retorne o resultado como um array JSON, seguindo o schema fornecido. As categorias possíveis são: Brasileiro, Fitness, Mediterranea, Asiatico, Vegana, Italiana, Francesa, Árabe, Fast Food, Inovadora, Café da Manhã, Sobremesa Saudável, Mexicana. Seja criativo, mas acima de tudo, seja PRÁTICO e LÓGICO.`;
 
     const chatHistory = [{ role: "user", parts: [{ text: fullPrompt }] }];
     const payload = {
@@ -59,7 +70,6 @@ export async function POST(req: Request) {
     
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
-    // 5. Faz a chamada para a API do Gemini a partir do servidor
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -74,7 +84,6 @@ export async function POST(req: Request) {
 
     const result = await response.json();
 
-    // 6. Envia a resposta limpa (apenas a lista de receitas) de volta para o front-end
     if (result.candidates && result.candidates[0].content && result.candidates[0].content.parts[0]) {
       const jsonText = result.candidates[0].content.parts[0].text;
       const parsedJson = JSON.parse(jsonText);
@@ -83,7 +92,7 @@ export async function POST(req: Request) {
       throw new Error("A resposta da IA não continha dados válidos.");
     }
 
-  } catch (error) { // CORREÇÃO APLICADA AQUI
+  } catch (error) {
     console.error("Erro no nosso endpoint /api/generate-menu:", error);
     const errorMessage = error instanceof Error ? error.message : 'Ocorreu um erro interno.';
     return NextResponse.json({ error: errorMessage }, { status: 500 });

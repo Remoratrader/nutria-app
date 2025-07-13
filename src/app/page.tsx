@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { Leaf, ShoppingCart, User, UtensilsCrossed, Heart, ArrowLeft, Send, Bot, Sparkles, LoaderCircle, Droplets, Coffee, Package, Sandwich, MinusCircle, PlusCircle, BookOpen, WheatOff, Snowflake, Utensils, Wallet, Baby, Carrot, Dumbbell, BedDouble, Wheat, List } from 'lucide-react';
+import { Leaf, ShoppingCart, User, UtensilsCrossed, Heart, ArrowLeft, Send, Bot, Sparkles, LoaderCircle, Droplets, Coffee, Package, Sandwich, MinusCircle, PlusCircle, BookOpen, WheatOff, Snowflake, Utensils, Wallet, Baby, Carrot, Dumbbell, BedDouble, Wheat, List, ChevronDown } from 'lucide-react';
 
 // --- INTERFACES E TIPOS ---
 interface Ingredient {
@@ -34,7 +34,7 @@ interface UserProfile {
   objective: 'emagrecer' | 'definir' | 'ganhar massa';
 }
 
-type View = 'welcome' | 'profile' | 'recommendations' | 'menu' | 'shopping' | 'aiMenu';
+type View = 'welcome' | 'profile' | 'recommendations' | 'menu' | 'shopping' | 'aiMenu' | 'aiResults';
 
 // --- DADOS MOCKADOS (TOTAL: 64 RECEITAS) ---
 const recipesData: Recipe[] = [
@@ -260,7 +260,7 @@ const AIAssistant: React.FC<{
 
       setAiGeneratedMeals(recipesWithIds);
       recipesWithIds.forEach((recipe) => updateMealCount(recipe, 1));
-      setCurrentView('shopping');
+      setCurrentView('aiResults');
 
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Ocorreu um erro desconhecido.';
@@ -299,7 +299,7 @@ const AIAssistant: React.FC<{
         {error && <p className="text-sm text-red-600">{error}</p>}
         <button onClick={handleGenerate} disabled={isLoading || (prompt === '' && selectedTags.size === 0)} className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:bg-gray-400">
           {isLoading ? <LoaderCircle className="animate-spin h-5 w-5 mr-2" /> : <Sparkles className="h-5 w-5 mr-2" />}
-          {isLoading ? 'Gerando...' : 'Gerar Cardápio e Lista de Compras'}
+          {isLoading ? 'Gerando...' : 'Gerar Cardápio'}
         </button>
         <button onClick={() => setCurrentView('welcome')} className="mt-2 w-full flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md border">
             <ArrowLeft className="h-4 w-4 mr-2" /> Voltar ao Início
@@ -452,6 +452,43 @@ export default function NutriApp() {
       case 'aiMenu':
         return <AIAssistant setAiGeneratedMeals={setAiGeneratedMeals} updateMealCount={updateMealCount} setCurrentView={setCurrentView} dailyCalories={dailyCalories} objective={userProfile.objective} />;
       
+      case 'aiResults':
+        return (
+            <div className="w-full max-w-4xl p-4 sm:p-6 bg-white rounded-2xl shadow-lg animate-fade-in">
+                <h2 className="text-3xl font-bold text-gray-800 text-center mb-4">Cardápio Gerado pela IA</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[60vh] overflow-y-auto p-2">
+                    {aiGeneratedMeals.map(recipe => (
+                        <div key={recipe.id} className={`p-4 rounded-lg flex flex-col justify-between transition-all ${selectedMeals.has(recipe.id) ? 'ring-2 ring-green-500 bg-green-50' : 'bg-gray-100 hover:bg-gray-200'}`}>
+                            <div>
+                                <h3 className="font-bold text-gray-800"><span className="mr-2">{recipe.icon || '🍲'}</span>{recipe.name}</h3>
+                                <p className="text-sm text-gray-600"><strong>{recipe.calories} kcal</strong> - {recipe.category}</p>
+                                <details className="text-xs mt-2 group">
+                                    <summary className="cursor-pointer font-medium text-green-600 hover:text-green-800 list-none flex items-center p-1 -ml-1">
+                                        <BookOpen size={14} className="mr-1" />
+                                        Modo de Preparo
+                                    </summary>
+                                    <p className="mt-2 p-2 bg-white rounded-md text-gray-700 text-sm">{recipe.instructions || 'Instruções não disponíveis.'}</p>
+                                </details>
+                            </div>
+                            <div className="flex items-center justify-center mt-3 gap-4">
+                                <button onClick={() => updateMealCount(recipe, -1)} className="text-red-500 hover:text-red-700 disabled:opacity-50" disabled={!selectedMeals.has(recipe.id)}><MinusCircle size={28}/></button>
+                                <span className="font-bold text-xl w-8 text-center text-gray-900">{selectedMeals.get(recipe.id) || 0}</span>
+                                <button onClick={() => updateMealCount(recipe, 1)} className="text-green-500 hover:text-green-700"><PlusCircle size={28}/></button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                <div className="mt-6 flex flex-col sm:flex-row gap-2">
+                    <button onClick={() => setCurrentView('shopping')} className="w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:bg-gray-400" disabled={selectedMeals.size === 0}>
+                        <ShoppingCart className="h-5 w-5 mr-2" /> Ver Lista de Compras
+                    </button>
+                    <button onClick={() => setCurrentView('aiMenu')} className="w-full flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md border">
+                        <ArrowLeft className="h-4 w-4 mr-2" /> Gerar Novamente
+                    </button>
+                </div>
+            </div>
+        );
+
       case 'menu':
         const totalCalories = Array.from(selectedMeals.entries()).reduce((acc, [recipeId, count]) => {
             const recipe = allRecipes.find(r => r.id === recipeId);

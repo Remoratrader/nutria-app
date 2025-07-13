@@ -35,7 +35,6 @@ type View = 'welcome' | 'profile' | 'recommendations' | 'menu' | 'shopping' | 'a
 
 // --- DADOS MOCKADOS (TOTAL: 52 RECEITAS) ---
 const recipesData: Recipe[] = [
-    // ... (as 52 receitas que definimos anteriormente)
     // Brasileiro (6)
     { id: 1, name: 'Feijoada Leve', category: 'Brasileiro', icon: '🍲', calories: 650, ingredients: [{ name: 'Feijão Preto', quantity: 200, unit: 'g' }, { name: 'Carne Seca', quantity: 100, unit: 'g' }, { name: 'Couve', quantity: 50, unit: 'g' }], price: 30.00, instructions: "Cozinhe o feijão com a carne dessalgada. Refogue a couve." },
     { id: 2, name: 'Moqueca de Banana da Terra', category: 'Brasileiro', icon: '🍌', calories: 500, ingredients: [{ name: 'Banana da Terra', quantity: 2, unit: 'un' }, { name: 'Leite de Coco', quantity: 200, unit: 'ml' }, { name: 'Azeite de Dendê', quantity: 20, unit: 'ml' }], price: 27.00, instructions: "Refogue os temperos, adicione a banana e o leite de coco, cozinhe até amaciar." },
@@ -210,7 +209,7 @@ const AIMenuGenerator: React.FC<{
       recipesWithIds.forEach((recipe: Recipe) => updateMealCount(recipe, 1));
       setCurrentView('shopping');
 
-    } catch (e) { // CORREÇÃO APLICADA AQUI
+    } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Ocorreu um erro desconhecido.';
       console.error(e);
       setError(`Ocorreu um erro ao gerar o cardápio. Detalhes: ${errorMessage}`);
@@ -225,7 +224,6 @@ const AIMenuGenerator: React.FC<{
         <Bot className="mx-auto h-12 w-12 text-green-500" />
         <h2 className="mt-4 text-3xl font-bold text-gray-800">Chef com IA</h2>
         <p className="mt-2 text-gray-500">Descreva o cardápio que você deseja.</p>
-        {/* CORREÇÃO: Aspas duplas trocadas por simples */}
         <p className="mt-1 text-xs text-gray-400">Ex: &apos;Um plano semanal com 5 jantares e 3 almoços, low carb&apos;</p>
       </div>
       <div className="space-y-4">
@@ -407,7 +405,6 @@ export default function NutriApp() {
             <div className="mt-6 p-4 bg-gray-50 rounded-lg">
               <h3 className="font-bold text-gray-800">Resumo do Plano</h3>
               <p className="text-sm text-gray-600">Total de refeições: {Array.from(selectedMeals.values()).reduce((a, b) => a + b, 0)}</p>
-              {/* CORREÇÃO: Mostrando o total de calorias do plano, não uma média diária. */}
               <p className="text-sm text-gray-600">Total de calorias do plano: <span className="font-bold text-gray-800">{totalCalories}</span> kcal</p>
               <button onClick={() => setCurrentView('shopping')} disabled={selectedMeals.size === 0} className="mt-4 w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:bg-gray-400">
                 <ShoppingCart className="h-5 w-5 mr-2" /> Gerar Lista de Compras
